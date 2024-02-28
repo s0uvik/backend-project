@@ -19,7 +19,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // get user details from frontend
     const { fullName, email, userName, password } = req.body;
-    console.log(email);
 
     // validation
     if (
@@ -31,7 +30,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // check if user already exists : (userName & email)
-    const existedUser = User.findOne({ $or: [{ userName }, { email }] });
+    const existedUser = await User.findOne({ $or: [{ userName }, { email }] });
     if (existedUser) {
         throw new ApiError(
             409,
@@ -41,16 +40,30 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // check for images and avatar
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if (
+        req.files &&
+        Array.isArray(req.files.coverImage) &&
+        req.files.coverImage.length > 0
+    ) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
+
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar is required");
     }
 
     // upload images and avatar to cloudinary
     const avatar = await uploadOnCloudinary(avatarLocalPath, "avatar");
-    const coverImage = await uploadOnCloudinary(avatarLocalPath, "coverImage");
+    const coverImage = await uploadOnCloudinary(
+        coverImageLocalPath,
+        "coverImage"
+        );
+        console.log(email);
 
-    if (!avatar || !coverImage) {
+    if (!avatar) {
         throw new ApiError(400, "Error uploading images");
     }
 
